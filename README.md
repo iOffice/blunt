@@ -28,3 +28,18 @@ qb.select.join[Comment].on('id, 'postId).build
   .unsafePerformIO
 // res1: NonEmptyList[(Post, Comment)] = ...
 ```
+
+Blunt will attempt to dervive a `Queryable` instance for you, by using a pluralized
+version of the case class name as the table name. If this convention doesn't work for you,
+or the pluralization is incorrect, you can provide your own `Queryable` instance:
+
+``` scala
+case class Medium(id: Int, name: String)
+
+object Post {
+  implicit val queryable = new Queryable[Post] {
+    val columns = Seq(fr"id", fr"name")
+    val table = Fragment.const("Media")
+  }
+}
+```
