@@ -2,12 +2,10 @@
 
 <img align="right" src="https://cdn.rawgit.com/iOffice/blunt/5cdd7380/blunt_logo.svg" height="150px" style="padding-left: 20px"/>
 
-*blunt* is a matter-of-fact query builder made with [doobie](https://github.com/tpolecat/doobie).
-It provides a simple interface to map database schema to case classes, and an easy to use, typesafe way
+**blunt** is a matter-of-fact query builder made with [doobie](https://github.com/tpolecat/doobie).
+**blunt** provides a simple interface to map database schema to case classes, and an easy to use, typesafe way
 of constructing queries. You get all the principled function programming that doobie provides, with an 
 additional layer of composability and brevity.
-
-## Example
 
 ``` scala
 import doobie.imports._
