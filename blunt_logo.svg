@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:sketch="http://www.bohemiancoding.com/sketch/ns"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="248px"
+   height="281px"
+   viewBox="0 0 248 281"
+   version="1.1"
+   id="svg4200"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="blunt_logo.svg">
+  <metadata
+     id="metadata4215">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Slice 1</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1419"
+     inkscape:window-height="788"
+     id="namedview4213"
+     showgrid="false"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-paths="true"
+     inkscape:zoom="0.83985765"
+     inkscape:cx="-55.197034"
+     inkscape:cy="235.75424"
+     inkscape:window-x="3"
+     inkscape:window-y="1"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg4200" />
+  <!-- Generator: Sketch 3.4.4 (17249) - http://www.bohemiancoding.com/sketch -->
+  <title
+     id="title4202">Slice 1</title>
+  <desc
+     id="desc4204">Created with Sketch.</desc>
+  <defs
+     id="defs4206" />
+  <g
+     id="Page-1"
+     sketch:type="MSPage"
+     style="fill:#1ca1ce;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1"
+     transform="matrix(-1,0,0,1,248,0)">
+    <g
+       sketch:type="MSLayerGroup"
+       transform="translate(0,1)"
+       id="doobie"
+       style="fill:#1ca1ce;fill-opacity:1">
+      <g
+         sketch:type="MSShapeGroup"
+         id="g4210"
+         style="fill:#1ca1ce;fill-opacity:1">
+        <path
+           d="m 87.264421,139.55011 c 0,20.17268 16.377089,36.52584 36.579289,36.52584 20.2022,0 36.57929,-16.35316 36.57929,-36.52584 0,-20.17269 -16.37709,-36.52585 -36.57929,-36.52585 -20.2022,0 -36.579289,16.35316 -36.579289,36.52585 l 0,0 z m 119.090659,-94.563981 0,133.709201 c 0,4.91948 -2.63977,9.4624 -6.91748,11.90317 L 130.6811,229.83 c -4.22509,2.41062 -9.41262,2.40833 -13.63542,-0.007 L 48.461717,190.60078 c -4.27131,-2.4426 -6.906497,-6.9814 -6.906497,-11.89676 l 0,-78.24503 c 0,-4.915365 2.63473,-9.45417 6.906497,-11.896771 L 117.04705,49.339853 c 4.22234,-2.415181 9.40988,-2.417466 13.63496,-0.0069 l 34.02357,19.413765 0,-47.525381 -34.0254,-19.4151353 c -4.22508,-2.4106117 -9.41262,-2.40832676 -13.63542,0.00685 L 6.9060383,64.798843 C 2.6347291,67.241444 0,71.780249 0,76.695612 L 0,202.46785 c 0,4.9149 2.6347291,9.45371 6.9060383,11.89631 L 117.04339,277.3499 c 4.2228,2.41518 9.40988,2.41747 13.63496,0.007 L 241.08206,214.36187 C 245.35978,211.9211 248,207.37818 248,202.45825 l 0,-125.753498 c 0,-4.919933 -2.64022,-9.462851 -6.91794,-11.903624 l -34.72698,-19.814999 0,0 z"
+           id="Path"
+           style="fill:#1ca1ce;fill-opacity:1"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+  </g>
+</svg>
