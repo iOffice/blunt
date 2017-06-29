@@ -10,7 +10,7 @@ lazy val root = (project in file(".")).
       organization := "com.iofficecorp",
       scalaVersion := "2.12.2",
       crossScalaVersions := Seq("2.12.2", "2.11.8"),
-      version      := "0.1.0-SNAPSHOT"
+      version      := "0.0.1"
     )),
     name := "blunt",
     libraryDependencies ++= Seq(
