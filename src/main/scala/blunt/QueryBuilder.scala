@@ -291,7 +291,7 @@ object QueryBuilder {
 
   implicit class BuildSelect[T : Composite : Queryable](
     qb: QueryBuilder[T, Set, Unset, Unset, Unset, _, _]
-  ) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
     def build: Query0[T] =
       (qb.selectFrag.getOrElse(fr"") ++ 
        qb.joinFrag.getOrElse(fr"") ++ 
@@ -301,7 +301,7 @@ object QueryBuilder {
 
   implicit class BuildDelete[T : Composite : Queryable](
     qb: QueryBuilder[T, Unset, Unset, Unset, Set, _, _]
-  ) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
     def build: Update0 =
       (qb.deleteFrag.getOrElse(fr"") ++ 
        qb.joinFrag.getOrElse(fr"") ++ 
@@ -311,7 +311,7 @@ object QueryBuilder {
 
   implicit class BuildUpdate[T : Composite : Queryable](
     qb: QueryBuilder[T, Unset, Set, Unset, Unset, _, _]
-  ) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
     def build: Update0 = {
       val updateFrag = fr"update " ++ qb.queryable.table ++ fr" set " ++
         qb.updateFrag.toList.intercalate(fr",")
@@ -324,7 +324,7 @@ object QueryBuilder {
 
   implicit class BuildInsert[T : Composite : Queryable](
     qb: QueryBuilder[T, Unset, Unset, Set, Unset, _, _]
-  ) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
     def build: Update0 = qb.insertFrag
       .flatMap({ case (columnsFrag, values) => 
         values 
