@@ -3,6 +3,9 @@ import doobie.imports._
 
 import java.util.UUID
 
+case class Post(id: Int, title: String, subtitle: Option[String], text: String)
+case class Comment(id: Int, postId: Int, text: String)
+
 trait InMemoryDB {
   implicit val transactor = DriverManagerTransactor[IOLite](
     "org.h2.Driver",
