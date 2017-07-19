@@ -36,8 +36,8 @@ or the pluralization is incorrect, you can provide your own `Queryable` instance
 ``` scala
 case class Medium(id: Int, name: String)
 
-object Post {
-  implicit val queryable = new Queryable[Post] {
+object Medium {
+  implicit val queryable = new Queryable[Medium] {
     val columns = Seq(fr"id", fr"name")
     val table = Fragment.const("Media")
   }
