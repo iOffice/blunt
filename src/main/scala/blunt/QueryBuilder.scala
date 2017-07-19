@@ -164,15 +164,28 @@ class QueryBuilder[T : Composite, Select <: State, Update <: State, Insert <: St
     }
   }
 
-  def where[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
-    implicit generic: LabelledGeneric.Aux[T, H],
-    selector: Selector.Aux[H, column.T, V],
-    ev0: Where =:= Unset,
-    ev1: Join =:= Unset
-  ) = {
-    val newWhere = fr" where " ++ eqFrag(column.value, value)
-    new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
-      selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+  trait WhereApply[O <: Operator] {
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+      implicit generic: LabelledGeneric.Aux[T, H],
+      selector: Selector.Aux[H, column.T, V],
+      ev0: Where =:= Unset,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]
+    ): QueryBuilder[T, _, _, _, _, _, _]
+  }
+
+  def where[O <: Operator] = new WhereApply[O] { 
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+      implicit generic: LabelledGeneric.Aux[T, H],
+      selector: Selector.Aux[H, column.T, V],
+      ev0: Where =:= Unset,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]
+    ) = {
+      val newWhere = fr" where " ++ opFrag(column.value, opSql.sql, value)
+      new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
+        selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+    }
   }
 
   def and[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
@@ -251,6 +264,12 @@ object QueryBuilder {
 
   def eqFrag(column: Fragment, value: Fragment): Fragment = 
     column ++ fr"=" ++ value
+
+  def opFrag(column: Fragment, op: Fragment, value: Fragment): Fragment = 
+    column ++ op ++ value
+
+  def opFrag[V : Atom](column: Symbol, op: Fragment, value: V): Fragment =
+    opFrag(Fragment.const(column.name), op, fr"$value")
 
   def scopedEq[V : Atom](table: Fragment, column: Symbol, value: V): Fragment =
     scopedEq(table, Fragment.const(column.name), fr"$value")
