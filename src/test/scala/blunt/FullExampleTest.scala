@@ -5,9 +5,6 @@ import doobie.imports._
 import cats._, cats.implicits._
 
 class FullExampleTest extends FlatSpec with Matchers {
-  case class Post(id: Int, title: String, subtitle: Option[String], text: String)
-  case class Comment(id: Int, postId: Int, text: String)
-
   lazy val qb = QueryBuilder[Post]
 
   "Insert" should "create a post in the database" in new InMemoryDB{
