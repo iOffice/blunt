@@ -3,8 +3,8 @@ import doobie.imports._
 
 import java.util.UUID
 
-case class Post(id: Int, title: String, subtitle: Option[String], text: String)
-case class Comment(id: Int, postId: Int, text: String)
+case class Post(id: Int, title: String, subtitle: Option[String], text: String, likes: Int = 0)
+case class Comment(id: Int, postId: Int, text: String, likes: Int = 0)
 
 trait InMemoryDB {
   implicit val transactor = DriverManagerTransactor[IOLite](
@@ -19,7 +19,8 @@ trait InMemoryDB {
       id          INT            NOT NULL IDENTITY(1, 1) PRIMARY KEY,
       title       VARCHAR(255)   NOT NULL,
       subtitle    VARCHAR(255),
-      text        VARCHAR(255)   NOT NULL
+      text        VARCHAR(255)   NOT NULL,
+      likes       INT            NOT NULL
     )
   """.update
 
@@ -28,6 +29,7 @@ trait InMemoryDB {
       id          INT            NOT NULL IDENTITY(1, 1) PRIMARY KEY,
       postId      INT            NOT NULL,
       text        VARCHAR(255)   NOT NULL,
+      likes       INT            NOT NULL,
       FOREIGN KEY (postId) REFERENCES Posts(id)
     )
   """.update

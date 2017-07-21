@@ -40,9 +40,18 @@ lazy val root = (project in file(".")).
       object Test {
         implicit val q = new Queryable[Test] {
           val columns = Seq(fr"id", fr"test")
-          val table = fr"Test"
+          val table = fr0"Test"
         }
       }
+
+      case class Test2(id: Int, test2: String)
+      object Test2 {
+        implicit val q = new Queryable[Test2] {
+          val columns = Seq(fr"id", fr"test2")
+          val table = fr0"Test2"
+        }
+      }
+
       val qb = QueryBuilder[Test]
     """
   )
