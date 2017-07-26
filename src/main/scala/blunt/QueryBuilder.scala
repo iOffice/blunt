@@ -131,70 +131,154 @@ class QueryBuilder[T : Composite, Select <: State, Update <: State, Insert <: St
       selectFrag, updateFrag, newInsert, deleteFrag, whereFrag, joinFrag)
   }
 
-  def join[S : Composite](
-    implicit q: Queryable[S],
-    ev0: Select =:= Set,
-    ev1: Join =:= Unset,
-    ev2: Update =:= Unset,
-    ev3: Delete =:= Unset
-  ) = new JoinExtension[T, S, Select, Update, Insert, Delete, Where] {
-    def on[
-      H <: HList, L <: HList, U, V](
-
-      leftColumn: Witness.Lt[Symbol], 
-      rightColumn: Witness.Lt[Symbol])(
-
+  class OnApply[S : Composite, O <: Operator](implicit q: Queryable[S]) {
+    def apply[H <: HList, L <: HList, U, V](
+      leftColumn: Witness.Lt[Symbol], rightColumn: Witness.Lt[Symbol])( 
       implicit leftGen: LabelledGeneric.Aux[T, H],
+      tupComp: Composite[(T, S)],
       rightGen: LabelledGeneric.Aux[S, L],
       leftSel: Selector.Aux[H, leftColumn.T, U],
       rightSel: Selector.Aux[L, rightColumn.T, V],
       atom1: Atom[U],
       atom2: Atom[V],
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O],
       ev: U =:= V
-    ) = {
+    ): QueryBuilder[(T, S), Select, Update, Insert, Delete, Where, Set] = {
       val newSelect = fr"select" ++ 
         queryable.columns.toList.map(dot(queryable.table, _)).intercalate(fr",") ++
         fr"," ++ q.columns.toList.map(dot(q.table, _)).intercalate(fr",") ++
         fr" from " ++ queryable.table
       val newJoin = fr" join " ++ q.table ++ 
         fr" on " ++ dot(queryable.table, Fragment.const(leftColumn.value.name)) ++ 
-        fr0" = " ++ dot(q.table, Fragment.const(rightColumn.value.name))
+        opSql.sql ++ dot(q.table, Fragment.const(rightColumn.value.name))
       new QueryBuilder[(T, S), Select, Update, Insert, Delete, Where, Set](
         Some(newSelect), updateFrag, insertFrag, deleteFrag, whereFrag, Some(newJoin))
     }
   }
 
-  def where[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
-    implicit generic: LabelledGeneric.Aux[T, H],
-    selector: Selector.Aux[H, column.T, V],
-    ev0: Where =:= Unset,
-    ev1: Join =:= Unset
-  ) = {
-    val newWhere = fr" where " ++ eqFrag(column.value, value)
-    new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
-      selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+  class JoinExtension[S : Composite : Queryable] {
+    def on[O <: Operator] = new OnApply[S, O]
   }
 
-  def and[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
-      implicit generic: LabelledGeneric.Aux[T, H],
+  def join[S : Composite](
+    implicit q: Queryable[S],
+    ev0: Select =:= Set,
+    ev1: Join =:= Unset,
+    ev2: Update =:= Unset,
+    ev3: Delete =:= Unset
+  ) = new JoinExtension[S]
+
+  abstract class WhereApply[O <: Operator, S : Composite : Queryable] {
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+      implicit generic: LabelledGeneric.Aux[S, H],
       selector: Selector.Aux[H, column.T, V],
-      ev: Where =:= Set) = {
-    val newWhere = whereFrag
-      .map(_ ++ fr" and " ++ eqFrag(column.value, value))
-      .getOrElse(fr" where " ++ eqFrag(column.value, value))
-    new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
-      selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+      ev0: Where =:= Unset,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]
+    ): QueryBuilder[T, _, _, _, _, _, _]
   }
 
-  def or[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+  abstract class AndOrApply[O <: Operator, S : Composite : Queryable] {
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+      implicit generic: LabelledGeneric.Aux[S, H],
+      selector: Selector.Aux[H, column.T, V],
+      ev0: Where =:= Set,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]
+    ): QueryBuilder[T, _, _, _, _, _, _]
+  }
+
+  def where[O <: Operator] = new WhereApply[O, T] { 
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
       implicit generic: LabelledGeneric.Aux[T, H],
       selector: Selector.Aux[H, column.T, V],
-      ev: Where =:= Set) = {
-    val newWhere = whereFrag
-      .map(_ ++ fr" or " ++ eqFrag(column.value, value))
-      .getOrElse(fr" where " ++ eqFrag(column.value, value))
-    new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
-      selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+      ev0: Where =:= Unset,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]
+    ) = {
+      val newWhere = fr" where " ++ opFrag(column.value, opSql.sql, value)
+      new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
+        selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+    }
+  }
+
+  def and[O <: Operator] = new AndOrApply[O, T] {
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+      implicit generic: LabelledGeneric.Aux[T, H],
+      selector: Selector.Aux[H, column.T, V],
+      ev: Where =:= Set,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]) = {
+        val newWhere = whereFrag
+          .map(_ ++ fr" and " ++ opFrag(column.value, opSql.sql, value))
+          .getOrElse(fr" where " ++ opFrag(column.value, opSql.sql, value))
+        new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
+          selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+    }
+  }
+
+  def or[O <: Operator] = new AndOrApply[O, T] {
+    def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+      implicit generic: LabelledGeneric.Aux[T, H],
+      selector: Selector.Aux[H, column.T, V],
+      ev: Where =:= Set,
+      defaultOp: DefaultsTo[O, eql],
+      opSql: ToSql[O]) = {
+        val newWhere = whereFrag
+          .map(_ ++ fr" or " ++ opFrag(column.value, opSql.sql, value))
+          .getOrElse(fr" where " ++ opFrag(column.value, opSql.sql, value))
+        new QueryBuilder[T, Select, Update, Insert, Delete, Set, Join](
+          selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+    }
+  }
+
+  class ProjectExtension[S : Composite](implicit q: Queryable[S]) {
+    def where[O <: Operator] = new WhereApply[O, S] {
+      def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+        implicit generic: LabelledGeneric.Aux[S, H],
+        selector: Selector.Aux[H, column.T, V],
+        ev1: Where =:= Unset,
+        defaultOp: DefaultsTo[O, eql],
+        opSql: ToSql[O]
+      ) = {
+        val newWhere = fr" where " ++ scopedOp(q.table, column.value, opSql.sql, value)
+        new QueryBuilder[T, Set, Unset, Unset, Unset, Set, Set](
+          selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+      }
+    }
+
+    def and[O <: Operator] = new AndOrApply[O, S] {
+      def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+        implicit generic: LabelledGeneric.Aux[S, H],
+        selector: Selector.Aux[H, column.T, V],
+        ev1: Where =:= Set,
+        defaultOp: DefaultsTo[O, eql],
+        opSql: ToSql[O]
+      ) = {
+        val newWhere = whereFrag
+          .map(_ ++ fr" and " ++ scopedOp(q.table, column.value, opSql.sql, value))
+          .getOrElse(fr" where " ++ scopedOp(q.table, column.value, opSql.sql, value))
+        new QueryBuilder[T, Set, Unset, Unset, Unset, Set, Set](
+          selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+      }
+    }
+
+    def or[O <: Operator] = new AndOrApply[O, S] {
+      def apply[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
+        implicit generic: LabelledGeneric.Aux[S, H],
+        selector: Selector.Aux[H, column.T, V],
+        ev1: Where =:= Set,
+        defaultOp: DefaultsTo[O, eql],
+        opSql: ToSql[O]
+      ) = {
+        val newWhere = whereFrag
+          .map(_ ++ fr" or " ++ scopedOp(q.table, column.value, opSql.sql, value))
+          .getOrElse(fr" where " ++ scopedOp(q.table, column.value, opSql.sql, value))
+        new QueryBuilder[T, Set, Unset, Unset, Unset, Set, Set](
+           selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
+      }
+    }
   }
 
   def project[S : Composite](
@@ -202,41 +286,7 @@ class QueryBuilder[T : Composite, Select <: State, Update <: State, Insert <: St
     sel1: TupleSelector.Aux[T, S],
     q: Queryable[S],
     ev0: Join =:= Set
-  ) = new {
-    def where[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
-      implicit generic: LabelledGeneric.Aux[S, H],
-      selector: Selector.Aux[H, column.T, V],
-      ev1: Where =:= Unset
-    ) = {
-      val newWhere = fr" where " ++ scopedEq(q.table, column.value, value)
-      new QueryBuilder[T, Set, Unset, Unset, Unset, Set, Set](
-         selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
-    }
-
-    def and[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
-      implicit generic: LabelledGeneric.Aux[S, H],
-      selector: Selector.Aux[H, column.T, V],
-      ev1: Where =:= Set
-    ) = {
-      val newWhere = whereFrag
-        .map(_ ++ fr" and " ++ scopedEq(q.table, column.value, value))
-        .getOrElse(fr" where " ++ scopedEq(q.table, column.value, value))
-      new QueryBuilder[T, Set, Unset, Unset, Unset, Set, Set](
-        selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
-    }
-
-    def or[V : Atom, H <: HList](column: Witness.Lt[Symbol], value: V)(
-      implicit generic: LabelledGeneric.Aux[S, H],
-      selector: Selector.Aux[H, column.T, V],
-      ev1: Where =:= Unset
-    ) = {
-      val newWhere = whereFrag
-        .map(_ ++ fr" or " ++ scopedEq(q.table, column.value, value))
-        .getOrElse(fr" where " ++ scopedEq(q.table, column.value, value))
-      new QueryBuilder[T, Set, Unset, Unset, Unset, Set, Set](
-         selectFrag, updateFrag, insertFrag, deleteFrag, Some(newWhere), joinFrag)
-    }
-  }
+  ) = new ProjectExtension[S]
 }
 
 object QueryBuilder {
@@ -252,11 +302,20 @@ object QueryBuilder {
   def eqFrag(column: Fragment, value: Fragment): Fragment = 
     column ++ fr"=" ++ value
 
+  def opFrag(column: Fragment, op: Fragment, value: Fragment): Fragment = 
+    column ++ op ++ value
+
+  def opFrag[V : Atom](column: Symbol, op: Fragment, value: V): Fragment =
+    opFrag(Fragment.const(column.name), op, fr"$value")
+
   def scopedEq[V : Atom](table: Fragment, column: Symbol, value: V): Fragment =
     scopedEq(table, Fragment.const(column.name), fr"$value")
 
   def scopedEq(table: Fragment, column: Fragment, value: Fragment) =
     eqFrag(dot(table, column), value)
+
+  def scopedOp[V : Atom](table: Fragment, column: Symbol, op: Fragment, value: V): Fragment =
+    opFrag(dot(table, Fragment.const(column.name)), op, fr"$value")
 
   object updateFolder extends Poly2 {
     implicit def eq[T : Atom, S <: Symbol]: Case.Aux[Seq[Fragment], (S, T), Seq[Fragment]] = 
@@ -271,27 +330,9 @@ object QueryBuilder {
       at((acc, t) => acc ++ fr"," ++ fr"$t")
   }
 
-  // This banishes the reflection warning
-  abstract class JoinExtension[T : Composite : Queryable, S : Composite : Queryable, 
-    Select <: State, Update <: State, Insert <: State, Delete <: State, Where <: State] {
-    def on[H <: HList, L <: HList, U, V](
-    leftColumn: Witness.Lt[Symbol], rightColumn: Witness.Lt[Symbol])( 
-    implicit leftGen: LabelledGeneric.Aux[T, H],
-    rightGen: LabelledGeneric.Aux[S, L],
-    leftSel: Selector.Aux[H, leftColumn.T, U],
-    rightSel: Selector.Aux[L, rightColumn.T, V],
-    atom1: Atom[U],
-    atom2: Atom[V],
-    ev: U =:= V): QueryBuilder[(T, S), Select, Update, Insert, Delete, Where, Set]
-  }
-
-  trait BuildQuery {
-    // implicit val han = LogHandler.jdkLogHandler
-  }
-
   implicit class BuildSelect[T : Composite : Queryable](
     qb: QueryBuilder[T, Set, Unset, Unset, Unset, _, _]
-  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) {
     def build: Query0[T] =
       (qb.selectFrag.getOrElse(fr"") ++ 
        qb.joinFrag.getOrElse(fr"") ++ 
@@ -301,7 +342,7 @@ object QueryBuilder {
 
   implicit class BuildDelete[T : Composite : Queryable](
     qb: QueryBuilder[T, Unset, Unset, Unset, Set, _, _]
-  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) {
     def build: Update0 =
       (qb.deleteFrag.getOrElse(fr"") ++ 
        qb.joinFrag.getOrElse(fr"") ++ 
@@ -311,7 +352,7 @@ object QueryBuilder {
 
   implicit class BuildUpdate[T : Composite : Queryable](
     qb: QueryBuilder[T, Unset, Set, Unset, Unset, _, _]
-  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) {
     def build: Update0 = {
       val updateFrag = fr"update " ++ qb.queryable.table ++ fr" set " ++
         qb.updateFrag.toList.intercalate(fr",")
@@ -324,7 +365,7 @@ object QueryBuilder {
 
   implicit class BuildInsert[T : Composite : Queryable](
     qb: QueryBuilder[T, Unset, Unset, Set, Unset, _, _]
-  )(implicit log: LogHandler = LogHandler.nop) extends BuildQuery {
+  )(implicit log: LogHandler = LogHandler.nop) {
     def build: Update0 = qb.insertFrag
       .flatMap({ case (columnsFrag, values) => 
         values 

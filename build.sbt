@@ -30,5 +30,28 @@ lazy val root = (project in file(".")).
       "localhost",
       artifactoryUserName.getOrElse("noUsernameSet"),
       artifactoryPassword.getOrElse("noPasswordSet")
-    )
+    ),
+    initialCommands in console := """
+      import doobie.imports._
+      import blunt._
+      import cats.implicits._
+
+      case class Test(id: Int, test: String)
+      object Test {
+        implicit val q = new Queryable[Test] {
+          val columns = Seq(fr"id", fr"test")
+          val table = fr0"Test"
+        }
+      }
+
+      case class Test2(id: Int, test2: String)
+      object Test2 {
+        implicit val q = new Queryable[Test2] {
+          val columns = Seq(fr"id", fr"test2")
+          val table = fr0"Test2"
+        }
+      }
+
+      val qb = QueryBuilder[Test]
+    """
   )
