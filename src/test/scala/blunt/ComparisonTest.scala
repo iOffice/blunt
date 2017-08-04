@@ -15,12 +15,20 @@ class ComparisonTest extends FlatSpec with Matchers {
     val postC = Post(-1, "Post C", None, "Here's another post", 3)
     val postD = Post(-1, "Post D", None, "Here's another post", 2)
     val postE = Post(-1, "Post E", None, "Here's the last post", 1)
+    val postF = Post(-1, "Post F", None, "I want to see if there are more posts.", 2)
+    val postG = Post(-1, "Post G", None, "There are a couple more posts", 2)
+    val postH = Post(-1, "Post H", None, "I wonder if There are no more posts", 2)
+    val postI = Post(-1, "Post I", None, "No more posts are There", 2)
     for {
       _ <- qb.insert(postA, 'id).build.run
       _ <- qb.insert(postB, 'id).build.run
       _ <- qb.insert(postC, 'id).build.run
       _ <- qb.insert(postD, 'id).build.run
       _ <- qb.insert(postE, 'id).build.run
+      _ <- qb.insert(postF, 'id).build.run
+      _ <- qb.insert(postG, 'id).build.run
+      _ <- qb.insert(postH, 'id).build.run
+      _ <- qb.insert(postI, 'id).build.run
     } yield ()
   }
 
@@ -50,7 +58,7 @@ class ComparisonTest extends FlatSpec with Matchers {
       posts <- qb.select.where[<]('likes, 3).build.nel
     } yield posts
     val posts = queryConn.transact(transactor).unsafePerformIO
-    posts.size shouldBe 2
+    posts.size shouldBe 6
     posts.forall(_.likes < 3) shouldBe true
   }
 
@@ -63,4 +71,29 @@ class ComparisonTest extends FlatSpec with Matchers {
     posts.size shouldBe 1
     posts.forall(_.likes <= 1) shouldBe true
   }
+  "like" should "return posts with 'There' anywhere in the text" in new InMemoryDB {
+    val queryConn = for {
+      _ <- createConn
+      posts <- qb.select.where[like]('text , "%There%").build.list
+    } yield posts
+    val posts = queryConn.transact(transactor).unsafePerformIO
+    posts.size shouldBe 3
+  }
+  it should "return posts with 'There' at the start of the text" in new InMemoryDB {
+    val queryConn = for {
+      _ <- createConn
+      posts <- qb.select.where[like]('text , "There%").build.list
+    } yield posts
+    val posts = queryConn.transact(transactor).unsafePerformIO
+    posts.size shouldBe 1
+  }
+  it should "return posts with 'There' at the end of the text" in new InMemoryDB {
+    val queryConn = for {
+      _ <- createConn
+      posts <- qb.select.where[like]('text , "%There").build.list
+    } yield posts
+    val posts = queryConn.transact(transactor).unsafePerformIO
+    posts.size shouldBe 1
+  }
 }
+
