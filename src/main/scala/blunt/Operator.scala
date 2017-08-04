@@ -10,6 +10,7 @@ case class gt() extends Operator
 case class gte() extends Operator
 case class lte() extends Operator
 case class eql() extends Operator
+case class like() extends Operator
 
 trait ToSql[O <: Operator] {
   def sql: Fragment
@@ -21,6 +22,7 @@ object Operator {
   implicit val gtSql = new ToSql[gt] { val sql = fr">" }
   implicit val gteSql = new ToSql[gte] { val sql = fr">=" }
   implicit val eqlSql = new ToSql[eql] { val sql = fr"=" }
+  implicit val likeSql = new ToSql[like] { val sql = Fragment.const(" like") }
 
   object Symbols {
     type < = lt
