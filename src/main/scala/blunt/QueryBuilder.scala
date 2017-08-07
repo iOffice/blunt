@@ -12,6 +12,8 @@ import shapeless.syntax._
 import shapeless.ops.hlist.{ Selector => _, _}
 import shapeless.ops.tuple.{ Selector => TupleSelector }
 
+import scala.reflect.runtime.universe.TypeTag
+
 
 sealed trait State
 sealed trait Set extends State
@@ -136,6 +138,7 @@ class QueryBuilder[T : Composite, Select <: State, Update <: State, Insert <: St
       leftColumn: Witness.Lt[Symbol], rightColumn: Witness.Lt[Symbol])( 
       implicit leftGen: LabelledGeneric.Aux[T, H],
       tupComp: Composite[(T, S)],
+      typeTag: TypeTag[(T, S)],
       rightGen: LabelledGeneric.Aux[S, L],
       leftSel: Selector.Aux[H, leftColumn.T, U],
       rightSel: Selector.Aux[L, rightColumn.T, V],
