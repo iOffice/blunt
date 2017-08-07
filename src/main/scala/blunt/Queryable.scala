@@ -8,7 +8,7 @@ import shapeless.ops.hlist._
 
 import org.atteo.evo.inflector.English
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
 
 abstract class Queryable[T : Composite] {
   def columns: Seq[Fragment]
@@ -34,12 +34,12 @@ object Queryable {
     implicit generic: LabelledGeneric.Aux[T, H],
     keys: Keys.Aux[H, K],
     keysList: ToTraversable.Aux[K, List, Symbol],
-    classTag: ClassTag[T]
+    typeTag: TypeTag[T]
   ): Queryable[T] = {
     val columnsFrag = keys.apply.toList.map(s => Fragment.const(s.name))
-    val className = splitCamelCase(classTag.runtimeClass.getSimpleName)
-    val pluralized = className.dropRight(1) ++ 
-      className.lastOption.map(English.plural(_)).toList
+    val typeName = splitCamelCase(typeTag.tpe.toString)
+    val pluralized = typeName.dropRight(1) ++ 
+      typeName.lastOption.map(English.plural(_)).toList
     val tableFrag = Fragment.const(pluralized.mkString)
     new Queryable[T] {
       val columns = columnsFrag

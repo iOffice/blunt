@@ -44,6 +44,21 @@ class FullExampleTest extends FlatSpec with Matchers {
     comments.size shouldBe 3
   }
 
+  it should "work in conjuction with where" in new InMemoryDB {
+    val post = Post(-1, "A Popular Post", None, "Everyone's commenting")
+    val commentQb = QueryBuilder[Comment]
+    val commentsConnection = for {
+      _ <- qb.insert(post, 'id).build.run
+      id <- lastId
+      _ <- commentQb.insert(Comment(-1, id, "This post sux"), 'id).build.run
+      _ <- commentQb.insert(Comment(-1, id, "This post sux"), 'id).build.run
+      _ <- commentQb.insert(Comment(-1, id, "A positive comment", 5), 'id).build.run
+      commentsWithPost <- qb.select.join[Comment].on('id, 'postId).project[Comment].where('likes, 5).build.nel
+    } yield commentsWithPost
+    val comments = commentsConnection.transact(transactor).unsafePerformIO
+    comments.size shouldBe 1
+  }
+
   "Update" should "fix a typo" in new InMemoryDB {
     val post = Post(-1, "A Wrong Post", None, "Whoops I mad a typeo")
     val postConn = for {
